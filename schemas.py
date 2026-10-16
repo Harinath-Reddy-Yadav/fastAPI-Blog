@@ -2,30 +2,6 @@ from pydantic import BaseModel, ConfigDict, Field, EmailStr
 from datetime import datetime
 
 
-class PostBase(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-    title: str = Field(..., min_length=1, max_length=100, description="Title of the post")
-    content: str = Field(..., min_length=1, description="Content of the post")
-    
-    
-
-class PostCreate(PostBase):
-    pass
-
-class PostUpdate(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-    title: str | None = Field(default=None, min_length=1, max_length=100, description="Title of the post")
-    content: str | None = Field(default=None, min_length=1, description="Content of the post")
-
-
-class PostResponse(PostBase):
-    model_config = ConfigDict(from_attributes=True)
-    id: int
-    user_id: int
-    author: UserPublic = Field(..., description="Author of the post")
-    date_posted: datetime
-
-
 class UserBase(BaseModel):
     model_config = ConfigDict(extra="ignore")
     username: str = Field(..., min_length=1, max_length = 50, description="Username of the user")
@@ -54,3 +30,34 @@ class UserUpdate(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+
+class PostBase(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    title: str = Field(..., min_length=1, max_length=100, description="Title of the post")
+    content: str = Field(..., min_length=1, description="Content of the post")
+    
+    
+
+class PostCreate(PostBase):
+    pass
+
+class PostUpdate(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    title: str | None = Field(default=None, min_length=1, max_length=100, description="Title of the post")
+    content: str | None = Field(default=None, min_length=1, description="Content of the post")
+
+
+class PostResponse(PostBase):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    user_id: int
+    author: UserPublic = Field(..., description="Author of the post")
+    date_posted: datetime
+
+class PaginatedPostResponse(BaseModel):
+    posts: list[PostResponse]
+    total: int
+    skip: int
+    limit: int
+    has_more: bool
+    

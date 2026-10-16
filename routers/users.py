@@ -1,13 +1,13 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, Query
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from sqlalchemy.exc import IntegrityError
 
 import models
-from schemas import UserCreate, UserPrivate,UserUpdate, PostResponse, UserPublic, Token
+from schemas import UserCreate, UserPrivate,UserUpdate, PostResponse, UserPublic, Token, PaginatedPostResponse
 from database import get_db
 from datetime import timedelta
 from fastapi.security import OAuth2PasswordRequestForm
@@ -119,8 +119,13 @@ async def get_user(user_id: int, db: Annotated[AsyncSession, Depends(get_db)]):
     return user    
 
 #API for returning user posts
-@router.get("/{user_id}/posts", response_model=list[PostResponse])
-async def get_user_posts(user_id: int, db: Annotated[AsyncSession, Depends(get_db)]):
+@router.get("/{user_id}/posts", response_model=PaginatedPostResponse)
+async def get_user_posts(
+    user_id: int, 
+    db: Annotated[AsyncSession, Depends(get_db)],
+    skip: Annotated[int, Query(ge=0)]= 0,
+    limit: Annotated[int, Query(ge=1, le=100)] = settings.posts_per_page
+    ):
     #Test user exists
     result = await db.execute(select(models.User).options(selectinload(models.User.posts)).where(models.User.id == user_id))
     user = result.scalar_one_or_none()
@@ -129,9 +134,16 @@ async def get_user_posts(user_id: int, db: Annotated[AsyncSession, Depends(get_d
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found",
         )
-    
+
     #Fetch the user posts
-    result = await db.execute(select(models.Post).options(selectinload(models.Post.author)).where(models.Post.user_id == user_id).order_by(models.Post.date_posted.desc()))
+    result = await db.execute(
+        select(models.Post)
+        .options(selectinload(models.Post.author))
+        .where(models.Post.user_id == user_id)
+        .order_by(models.Post.date_posted.desc())
+        .offset(skip)
+        .limit(limit)
+    )
     posts= result.scalars().all()
 
     #Test if any posts are found for the user
@@ -140,9 +152,20 @@ async def get_user_posts(user_id: int, db: Annotated[AsyncSession, Depends(get_d
             status_code=status.HTTP_404_NOT_FOUND,
             detail="No posts found for this user",
         )    
-    
-    return posts   
 
+    #Total posts
+    count_total = await db.execute(select(func.count()).select_from(models.Post).where(models.Post.user_id == user_id))
+    total_posts = count_total.scalar() or 0
+
+    has_more = (skip + len(posts)) < total_posts
+    
+    return PaginatedPostResponse(
+        posts= [PostResponse.model_validate(post) for post in posts],
+        total=total_posts,
+        skip=skip,
+        limit=limit,
+        has_more=has_more
+    )
 
 #patch request for user
 @router.patch("/{user_id}", response_model=UserPrivate) 

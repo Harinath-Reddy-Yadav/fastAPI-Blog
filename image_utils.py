@@ -28,7 +28,7 @@ def process_profile_picture(contnet: bytes) -> str:
     return filename
 
 #Delete profile pic
-def delete_profile_picture(filename: str) -> None:
+def delete_profile_picture(filename: str | None) -> None:
     if filename is None:
         return
     file_path = PROFILE_PICS_DIR / filename  

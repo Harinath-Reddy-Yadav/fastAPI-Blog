@@ -17,3 +17,6 @@ wheels/
 
 #Media
 media/profile_pics/*
+
+#Avoid scripts used for pulating data for testing
+scripts/*
