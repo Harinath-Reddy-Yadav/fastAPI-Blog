@@ -20,3 +20,5 @@ media/profile_pics/*
 
 #Avoid scripts used for pulating data for testing
 scripts/*
+
+#Avoid populated images
