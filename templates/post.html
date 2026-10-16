@@ -1,6 +1,6 @@
 {% extends "layout.html" %}
 {% block content %}
-<article class="content-section py-3 px-4 mb-4">
+<article id="postArticle" class="content-section py-3 px-4 mb-4" data-post-id="{{ post.id }}" data-user-id="{{ post.user_id }}">
     <div class="d-flex align-items-start gap-4">
         <img class="rounded-circle article-img flex-shrink-0" src="{{ post.author.image_path }}"
             alt="{{ post.author.username }}'s profile picture" width="64" height="64" loading="lazy">
@@ -76,8 +76,9 @@
     import { getCurrentUser, getToken } from '/static/js/auth.js';
     import { getErrorMessage, showModal, hideModal } from '/static/js/utils.js';
 
-    const postId = {{ post.id }};
-    const postUserId = {{ post.user_id }};
+    const postArticle = document.getElementById('postArticle');
+    const postId = Number(postArticle.dataset.postId);
+    const postUserId = Number(postArticle.dataset.userId);
 
     // Show edit/delete buttons only if current user owns this post
     async function checkOwnership() {

@@ -49,7 +49,7 @@ app.include_router(posts.router, prefix="/api/posts", tags=["Posts"])
 @app.get("/", include_in_schema=False, name="home")
 @app.get("/posts", include_in_schema=False, name="posts")
 async def home(request: Request, db: Annotated[AsyncSession, Depends(get_db)]):
-    result = await db.execute(select(models.Post).options(selectinload(models.Post.author)))
+    result = await db.execute(select(models.Post).options(selectinload(models.Post.author)).order_by(models.Post.date_posted.desc()))
     posts = result.scalars().all()
     return templates.TemplateResponse(
         request=request,
@@ -92,7 +92,7 @@ async def get_post(
 #Html rout for user post
 @app.get("/users/{user_id}/posts", include_in_schema=False, name="user_posts")
 async def get_user_posts(request:Request, user_id:int, db:Annotated[AsyncSession, Depends(get_db)]):
-    result = await db.execute(select(models.User).options(selectinload(models.User.posts)).where(models.User.id == user_id))
+    result = await db.execute(select(models.User).options(selectinload(models.User.posts)).where(models.User.id == user_id).order_by(models.Post.date_posted.desc()))
     user = result.scalar_one_or_none()
     if user is None:
         raise HTTPException(
@@ -110,6 +110,28 @@ async def get_user_posts(request:Request, user_id:int, db:Annotated[AsyncSession
                 },
             )
 
+#Login endpoint
+@app.get("/login", include_in_schema=False, name="login_page")
+async def login(request:Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="login.html",
+        context={
+            "title": "Login",
+        },
+    )
+
+#Register endpoint
+@app.get("/register", include_in_schema=False, name="register_page")
+async def register(request:Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="register.html",
+        context={
+            "title": "Register",
+        },
+    )
+
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     
@@ -125,6 +147,16 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         },
     )
 
+#Account endpoint
+@app.get("/account", include_in_schema=False, name="account_page")
+async def account(request:Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="account.html",
+        context={
+            "title": "Account",
+        },
+    )
 
 @app.exception_handler(StarletteHTTPException)
 async def http_exception_handler(request: Request, exc: StarletteHTTPException):

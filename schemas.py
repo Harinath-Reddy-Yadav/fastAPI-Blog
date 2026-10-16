@@ -10,7 +10,7 @@ class PostBase(BaseModel):
     
 
 class PostCreate(PostBase):
-    user_id: int = Field(..., description="ID of the author")
+    pass
 
 class PostUpdate(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -22,7 +22,7 @@ class PostResponse(PostBase):
     model_config = ConfigDict(from_attributes=True)
     id: int
     user_id: int
-    author: UserResponse = Field(..., description="Author of the post")
+    author: UserPublic = Field(..., description="Author of the post")
     date_posted: datetime
 
 
@@ -32,16 +32,25 @@ class UserBase(BaseModel):
     email: EmailStr = Field(..., max_length=200, description="Email of the user")
 
 class UserCreate(UserBase):
-    pass
+    password: str = Field(..., min_length=8, description="Password of the user")
+    
 
-class UserResponse(UserBase):
+class UserPublic(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
+    username: str
     image_file : str | None
     image_path : str 
+
+class UserPrivate(UserPublic):
+    email: EmailStr
 
 class UserUpdate(BaseModel):
     model_config = ConfigDict(extra="ignore")
     username: str | None = Field(default=None, min_length=1, max_length = 50, description="Username of the user")
     email: str | None = Field(default=None, max_length=200, description="Email of the user")
-    image_file: str | None  = Field(default=None, description="Filename of the profile picture")
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str

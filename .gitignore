@@ -8,4 +8,12 @@ wheels/
 
 # Virtual environments
 .venv
+
+# database
 *.db
+
+# env files
+.env
+
+#Media
+media/profile_pics/*
