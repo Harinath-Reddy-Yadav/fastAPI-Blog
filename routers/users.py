@@ -27,8 +27,9 @@ from auth import create_access_token, hash_password, verify_password, CurrentUse
 from config import settings
 from PIL import UnidentifiedImageError
 from starlette.concurrency import run_in_threadpool
-from image_utils import process_profile_picture, delete_profile_picture
+from image_utils import process_profile_picture, upload_profile_image, delete_profile_image
 from email_utils import send_password_reset_email
+from botocore.exceptions import ClientError
 
 router = APIRouter()
 
@@ -257,7 +258,7 @@ async def delete_user(user_id: int, current_user: CurrentUser, db: Annotated[Asy
     await db.commit()
 
     if old_filename:
-        await run_in_threadpool(delete_profile_picture, old_filename)
+        await delete_profile_image(old_filename)
 
 
 #Forgot password endpont
@@ -406,7 +407,7 @@ async def upload_profile_pic(user_id: int, file: UploadFile, current_user: Curre
         )    
 
     try:
-        new_filename = await run_in_threadpool(process_profile_picture, content)
+        processed_bytes, file_name = await run_in_threadpool(process_profile_picture, content)
     
     except UnidentifiedImageError:
         raise HTTPException(
@@ -414,14 +415,26 @@ async def upload_profile_pic(user_id: int, file: UploadFile, current_user: Curre
             detail="Invalid image file. Please upload a valid image file (JPEG, PNG, GIF or WebP)",
         )    
 
+    try:
+        await upload_profile_image(processed_bytes, file_name)
+    
+    except ClientError as e:
+       raise HTTPException(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        detail=f"Error uploading profile pic. Please try again {e}",
+       )
+
     old_filename = current_user.image_file
-    current_user.image_file = new_filename
+    current_user.image_file = file_name
     await db.commit()
     await db.refresh(current_user)
 
     # Delete the old profile pic
     if old_filename:
-        await run_in_threadpool(delete_profile_picture, old_filename)
+        try:
+            await delete_profile_image(old_filename)
+        except ClientError as e:
+            print(f"Warning: Failed to delete old image {old_filename}: {e}")
 
     return current_user    
 
@@ -449,5 +462,11 @@ async def delete_profile_pic(user_id: int, current_user: CurrentUser, db: Annota
     await db.commit()
     await db.refresh(current_user)
 
-    await run_in_threadpool(delete_profile_picture, old_filename)
-    return current_user
+    try:
+        await delete_profile_image(old_filename)
+    
+    except ClientError as e:
+       return HTTPException(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        detail="Error deleting profile picture. please try again"
+       )

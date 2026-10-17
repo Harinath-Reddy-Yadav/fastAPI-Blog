@@ -1,14 +1,30 @@
+from boto3 import client
 import uuid
 from io import BytesIO
 from PIL import Image, ImageOps
-from pathlib import Path
+from config import settings
+import boto3
+from starlette.concurrency import run_in_threadpool
 
 
-PROFILE_PICS_DIR = Path("media/profile_pics")
 
+#S3 client helper function which will create a singleton instance
+def _get_s3_client():
+    """
+    Helper function to get S3 client
+    """
+    return boto3.client(
+        "s3",
+        region_name=settings.S3_REGION,
+        aws_access_key_id=settings.S3_ACCESS_KEY_ID.get_secret_value() if settings.S3_ACCESS_KEY_ID else None,
+        aws_secret_access_key=settings.S3_SECRET_ACCESS_KEY.get_secret_value() if settings.S3_SECRET_ACCESS_KEY else None,
+        endpoint_url=settings.s3_endpoint_url
+    )
 
-def process_profile_picture(contnet: bytes) -> str:
-    with Image.open(BytesIO(contnet)) as original:
+s3_client = _get_s3_client()
+
+def process_profile_picture(content: bytes) -> tuple[bytes, str]:
+    with Image.open(BytesIO(content)) as original:
         img = ImageOps.exif_transpose(original)
         img = ImageOps.fit(img, (250, 250), Image.Resampling.LANCZOS)
 
@@ -21,18 +37,45 @@ def process_profile_picture(contnet: bytes) -> str:
             img = img.convert("RGB")
 
         filename = f"{uuid.uuid4()}.jpg"
-        save_path = PROFILE_PICS_DIR / filename
-        PROFILE_PICS_DIR.mkdir(parents=True, exist_ok=True)
-        img.save(save_path, format="jpeg", quality=85, optimize=True)
+        buffer = BytesIO()
+        img.save(buffer, format="jpeg", quality=85, optimize=True)
+        buffer.seek(0)
 
-    return filename
+    return buffer.read(), filename
 
-#Delete profile pic
-def delete_profile_picture(filename: str | None) -> None:
-    if filename is None:
-        return
-    file_path = PROFILE_PICS_DIR / filename  
-    if file_path.exists():
-        file_path.unlink()  #pathlib way of deletion
 
-#
+
+#upload to S3 helper function
+def _upload_to_s3_object(file_bytes: bytes, file_name: str):
+    s3_client.put_object(
+        Bucket=settings.S3_BUCKET_NAME,
+        Key=file_name,
+        Body=file_bytes,
+        ContentType="image/jpeg"
+    )
+
+
+#Delete from s3 helper function
+def _delete_from_s3(file_name: str) -> None:
+    s3_client.delete_object (
+        Bucket=settings.S3_BUCKET_NAME,
+        Key=file_name
+    )
+    return None
+
+#Create the functions for the async app
+async def upload_profile_image(file_bytes: bytes, file_name: str) -> None:
+    """
+    Upload an image to S3
+    """
+    key = f"profile_pics/{file_name}"
+    await run_in_threadpool(_upload_to_s3_object, file_bytes, key)
+
+async def delete_profile_image(file_name: str) -> None:
+    """
+    Delete an image from s3
+    """
+    if file_name is None:
+        return None
+    key = f"profile_pics/{file_name}"
+    await run_in_threadpool(_delete_from_s3, key)
