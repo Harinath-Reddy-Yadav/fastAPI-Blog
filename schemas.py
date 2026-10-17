@@ -61,3 +61,15 @@ class PaginatedPostResponse(BaseModel):
     limit: int
     has_more: bool
     
+class ForgetPasswordRequest(BaseModel):
+    email: EmailStr = Field(..., max_length=200, description="Email of the user")
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str = Field(..., min_length=1, description="Token of the user")
+    new_password: str = Field(..., min_length=8, description="New password of the user")
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str = Field(..., min_length=8, description="Current password of the user")
+    new_password: str = Field(..., min_length=8, description="New password of the user")
+    

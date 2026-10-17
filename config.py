@@ -13,6 +13,22 @@ class Settings(BaseSettings):
 
     posts_per_page: int = 10   #default page size
 
+    # Email Settings for reset password
+    reset_token_expire_minutes: int = 60   #in minutes
+    mail_server: str = "localhost"
+    mail_port: int = 587   #default port for local
+    mail_username: str = ""
+    mail_password: SecretStr = SecretStr("")
+    mail_from: str = "noreply@example.com"
+    mail_use_tls: bool = True
+
+
+    frontend_url: str = "http://localhost:8000"
+    
+
+
+
+
 
 settings = Settings() #Loads from .env   
     

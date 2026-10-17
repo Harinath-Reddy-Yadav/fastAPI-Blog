@@ -368,7 +368,7 @@
         changePasswordBtn.textContent = 'Changing...';
 
         try {
-            const response = await fetch('/api/users/me/password', {
+            const response = await fetch('/api/users/me/change_password', {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',

@@ -22,3 +22,4 @@ media/profile_pics/*
 scripts/*
 
 #Avoid populated images
+populate_images/*

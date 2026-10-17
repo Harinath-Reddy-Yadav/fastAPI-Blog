@@ -9,6 +9,8 @@ import models
 from database import get_db
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+import hashlib
+import secrets
 
 
 pwd_hasher = PasswordHash.recommended()
@@ -55,6 +57,19 @@ def verify_access_token(token: str) -> str | None:
         return None
     else:
         return payload.get("sub")
+
+
+
+#Generate reset token
+def generate_reset_token() -> str:
+    return secrets.token_urlsafe(32)
+
+
+#Hashing resdet token
+def hash_reset_token(token: str) -> str:
+    """Hash a raw token using SHA-256 for secure database storage and lookup."""
+    return hashlib.sha256(token.encode()).hexdigest()
+
 
             
 async def get_current_user(

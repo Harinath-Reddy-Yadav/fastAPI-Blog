@@ -165,6 +165,44 @@ async def register(request:Request):
         },
     )
 
+#Account endpoint
+@app.get("/account", include_in_schema=False, name="account_page")
+async def account(request:Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="account.html",
+        context={
+            "title": "Account",
+        },
+    )
+
+#Forget-Password page
+@app.get("/forgot-password", include_in_schema=False, name="forgot_password_page")
+async def forgot_password(request:Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="forgot_password.html",
+        context={
+            "title": "Forgot Password",
+        },
+    )
+
+#Reset password page
+@app.get("/reset-password", include_in_schema=False, name="reset_password_page")
+async def reset_password(request:Request):
+    response = templates.TemplateResponse(
+        request=request,
+        name="reset_password.html",
+        context={
+            "title": "Reset Password",
+        },
+    )
+
+    response.headers["Referre-policy"] = "no-referrer"
+
+    return response
+
+
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     
@@ -180,16 +218,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         },
     )
 
-#Account endpoint
-@app.get("/account", include_in_schema=False, name="account_page")
-async def account(request:Request):
-    return templates.TemplateResponse(
-        request=request,
-        name="account.html",
-        context={
-            "title": "Account",
-        },
-    )
+
 
 @app.exception_handler(StarletteHTTPException)
 async def http_exception_handler(request: Request, exc: StarletteHTTPException):
