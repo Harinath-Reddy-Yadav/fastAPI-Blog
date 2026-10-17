@@ -323,7 +323,7 @@ async def reset_password(
         )
     
     #validate token expired or not
-    if token.expires_at.replace(tzinfo=UTC) < datetime.now(UTC):   #Sqlite way once postgresql migration no need of replace
+    if token.expires_at < datetime.now(UTC):   #Sqlite way once postgresql migration no need of replace
         await db.delete(token)
         await db.commit()
         raise HTTPException(

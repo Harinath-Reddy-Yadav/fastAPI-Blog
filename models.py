@@ -39,6 +39,7 @@ class Post(Base):
         nullable=False, 
         default=lambda:datetime.now(UTC)) #sqlite store datetime in string so using lamda function
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    likes: Mapped[int] = mapped_column(Integer, default=0, server_default="0")  ## Importatnt when we add the not null columj to the databse which has data already
 
     author: Mapped["User"] = relationship(back_populates="posts")
 

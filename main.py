@@ -10,7 +10,7 @@ from typing import Annotated
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 import models
-from database import Base, engine, get_db
+from database import engine, get_db
 from datetime import datetime, UTC
 
 from contextlib import asynccontextmanager
@@ -24,8 +24,6 @@ from config import settings
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     print("starting up")
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
     yield
     print("shutting down")
     await engine.dispose()
