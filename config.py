@@ -34,9 +34,7 @@ class Settings(BaseSettings):
     S3_REGION: str = "us-east-1"
     S3_ACCESS_KEY_ID: SecretStr | None = None    #For local we need accesskey and secret key but if we deploy within AWS ecosystem then boto3 library will automatically take it using IAM role
     S3_SECRET_ACCESS_KEY: SecretStr | None = None
-    s3_endpoint_url: str | None = None    #Thera are S3 compatabile service that runs locally for testing  we need s3_endpoint_url but for real s3 endpoint from AWS its None
-
-
+    s3_endpoint_url: str | None = None    #Thera are S3 compatabile service that runs locally for testing  we need s3_endpoint_url but for real s3 endpoint from AWS its Non
 
 
 
